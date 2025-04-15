@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import VoicePost from './VoicePost';
+import { getCurrentUser } from '@/utils/auth';
 
 // Mock data for voice posts
 const mockPosts = [
@@ -74,14 +75,58 @@ const VoiceFeed: React.FC = () => {
   const [posts, setPosts] = useState(initialPosts);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const startRecording = () => {
-    setIsRecording(true);
-    toast.info('Recording started...');
+  useEffect(() => {
+    // Load posts from localStorage on mount
+    const storedPosts = localStorage.getItem('voicePosts');
+    if (storedPosts) {
+      setPosts(JSON.parse(storedPosts));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Store posts in localStorage whenever posts change
+    localStorage.setItem('voicePosts', JSON.stringify(posts));
+  }, [posts]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mediaRecorder = new window.MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+        setAudioFile(null); // clear file upload if any
+        // Stop all tracks to release the mic
+        stream.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.info('Recording started...');
+    } catch (err) {
+      toast.error('Microphone access denied');
+    }
   };
 
   const stopRecording = () => {
     setIsRecording(false);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
     toast.success('Voice recorded successfully!');
   };
 
@@ -98,10 +143,11 @@ const VoiceFeed: React.FC = () => {
     if (!url) {
       url = selectRelevantAudio(caption);
     }
+    const user = getCurrentUser();
     const newPost = {
       id: String(Date.now()),
-      username: 'Current User',
-      userAvatar: 'https://i.pravatar.cc/150?u=currentuser',
+      username: user?.username || 'Anonymous',
+      userAvatar: user?.avatarUrl || 'https://i.pravatar.cc/150?u=currentuser',
       audioUrl: url,
       caption,
       likes: 0,
@@ -113,6 +159,7 @@ const VoiceFeed: React.FC = () => {
     setCaption('');
     setAudioFile(null);
     setAudioUrl(null);
+    setDialogOpen(false);
     toast.success('Post created successfully!');
   };
 
@@ -129,11 +176,12 @@ const VoiceFeed: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6">
-      <Dialog>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <Button
             className="w-full mb-8 py-6 bg-background/50 backdrop-blur-sm border border-border shadow-sm hover:shadow-md transition-all rounded-2xl flex items-center justify-center gap-3 text-foreground"
             variant="ghost"
+            onClick={() => setDialogOpen(true)}
           >
             <Mic className="h-5 w-5" />
             <span>Record your voice</span>
@@ -166,7 +214,10 @@ const VoiceFeed: React.FC = () => {
             </div>
             <Button
               className="w-full"
-              onClick={handlePost}
+              onClick={() => {
+                handlePost();
+                setDialogOpen(false);
+              }}
               disabled={!isRecording && !caption && !audioFile}
             >
               Post
