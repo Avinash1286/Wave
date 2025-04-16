@@ -39,6 +39,7 @@ interface VoicePostProps {
   commentList: string[];
   onAddComment: (postId: string, comment: string) => void;
   onDelete: (postId: string) => void;
+  currentUsername?: string;
 }
 
 // List of available audio files and their keywords
@@ -81,6 +82,7 @@ const VoicePost: React.FC<VoicePostProps> = ({
   commentList,
   onAddComment,
   onDelete,
+  currentUsername,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -170,7 +172,10 @@ const VoicePost: React.FC<VoicePostProps> = ({
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(`https://voicewave.app/post/${id}`);
+    // Use the current window location as base, fallback to a sensible default
+    const baseUrl = window.location.origin || 'https://voicewave.app';
+    const postUrl = `${baseUrl}/post/${id}`;
+    navigator.clipboard.writeText(postUrl);
     toast.success('Link copied to clipboard!');
   };
 
@@ -189,30 +194,32 @@ const VoicePost: React.FC<VoicePostProps> = ({
                 <h3 className="font-medium text-foreground">{username}</h3>
                 <p className="text-xs text-muted-foreground">{createdAt}</p>
               </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-destructive/10 hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Post</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete your post and remove it from our servers.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => onDelete(id)}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {currentUsername === username && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-destructive/10 hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your post and remove it from our servers.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(id)}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
 
             {caption && <p className="text-sm text-foreground/90">{caption}</p>}

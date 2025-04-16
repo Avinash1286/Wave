@@ -174,6 +174,8 @@ const VoiceFeed: React.FC = () => {
     toast.success('Post deleted');
   };
 
+  const user = getCurrentUser();
+
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6">
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -234,6 +236,7 @@ const VoiceFeed: React.FC = () => {
               commentList={post.commentList}
               onAddComment={handleAddComment}
               onDelete={handleDeletePost}
+              currentUsername={user?.username}
             />
           </div>
         ))}
