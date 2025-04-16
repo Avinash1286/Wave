@@ -62,13 +62,56 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
       id: crypto.randomUUID(),
       name: values.name,
       description: values.description || '',
-      hostName: currentUser?.username || 'You', // Use username from User type
-      participantCount: 1,
-      speakerCount: 1,
+      hostName: currentUser?.username || 'You',
+      participantCount: 4, // 1 host + 1 speaker + 2 listeners
+      speakerCount: 2, // host + 1 dummy speaker
       isLive: true,
       createdAt: new Date().toISOString(),
       tags: values.tags ? values.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-      creatorId: currentUser?.id, // Store creator ID
+      creatorId: currentUser?.id,
+      // Add participants array for demo/testing
+      participants: [
+        {
+          id: currentUser?.id || 'host',
+          name: currentUser?.username || 'You',
+          imageUrl: currentUser?.avatarUrl,
+          isSpeaker: true,
+          isMuted: false,
+          isHost: true,
+          isSpeaking: false,
+          hasRaisedHand: false,
+        },
+        {
+          id: 'dummy-speaker',
+          name: 'Demo Speaker',
+          imageUrl: undefined,
+          isSpeaker: true,
+          isMuted: false,
+          isHost: false,
+          isSpeaking: false,
+          hasRaisedHand: false,
+        },
+        {
+          id: 'dummy-listener-1',
+          name: 'Demo Listener 1',
+          imageUrl: undefined,
+          isSpeaker: false,
+          isMuted: true,
+          isHost: false,
+          isSpeaking: false,
+          hasRaisedHand: false,
+        },
+        {
+          id: 'dummy-listener-2',
+          name: 'Demo Listener 2',
+          imageUrl: undefined,
+          isSpeaker: false,
+          isMuted: true,
+          isHost: false,
+          isSpeaking: false,
+          hasRaisedHand: false,
+        },
+      ],
     };
 
     onRoomCreated(newRoom);

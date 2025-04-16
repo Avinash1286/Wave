@@ -116,11 +116,10 @@ const RoomPage: React.FC = () => {
         
         let data;
         if (storedRoom) {
-          // If found in local storage, use that data
+          // Use the real participants array if present (for newly created rooms)
           data = {
             ...storedRoom,
-            // Add mock participants since we don't store those in local storage
-            participants: getMockRoomDetail(id)?.participants || []
+            participants: storedRoom.participants || getMockRoomDetail(id)?.participants || []
           };
         } else {
           // Fallback to mock data if not in local storage
@@ -311,6 +310,22 @@ const RoomPage: React.FC = () => {
     ));
   };
 
+  const handlePromote = (participantId: string) => {
+    setParticipants(prev => prev.map(p =>
+      p.id === participantId ? { ...p, isSpeaker: true, isMuted: false } : p
+    ));
+    // If the promoted participant is the current user, enable mic controls
+    if (currentUser && participantId === currentUser.id) {
+      setIsSpeaking(true); // Optionally auto-enable speaking for self
+    }
+  };
+
+  const handleDemote = (participantId: string) => {
+    setParticipants(prev => prev.map(p =>
+      p.id === participantId ? { ...p, isSpeaker: false } : p
+    ));
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -381,13 +396,22 @@ const RoomPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {[...groupedParticipants.hosts, ...groupedParticipants.speakers]
                 .map(participant => (
-                  <div key={participant.id} className="h-[150px] relative">
+                  <div key={participant.id} className="h-[150px] relative group">
                     <ParticipantAvatar
                       key={participant.id}
                       participant={participant}
                       size="lg"
                       liveIsSpeaking={participant.id === localParticipant.id ? isSpeaking : undefined}
                     />
+                    {/* Host controls: demote speaker (except host), promote listener */}
+                    {isHost && !participant.isHost && (
+                      <button
+                        className="absolute top-2 right-2 bg-white/80 hover:bg-red-500 hover:text-white text-xs rounded px-2 py-1 shadow transition-opacity opacity-0 group-hover:opacity-100"
+                        onClick={() => handleDemote(participant.id)}
+                      >
+                        Demote
+                      </button>
+                    )}
                   </div>
                 ))
               }
@@ -399,12 +423,23 @@ const RoomPage: React.FC = () => {
               <h2 className="text-lg font-semibold mb-4">Listeners</h2>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                 {groupedParticipants.listeners.map(participant => (
-                  <ParticipantAvatar
-                    key={participant.id}
-                    participant={participant}
-                    size="sm"
-                    liveIsSpeaking={participant.id === localParticipant.id ? isSpeaking : undefined}
-                  />
+                  <div key={participant.id} className="relative group">
+                    <ParticipantAvatar
+                      key={participant.id}
+                      participant={participant}
+                      size="sm"
+                      liveIsSpeaking={participant.id === localParticipant.id ? isSpeaking : undefined}
+                    />
+                    {/* Host controls: promote listener */}
+                    {isHost && (
+                      <button
+                        className="absolute top-2 right-2 bg-white/80 hover:bg-green-500 hover:text-white text-xs rounded px-2 py-1 shadow transition-opacity opacity-0 group-hover:opacity-100"
+                        onClick={() => handlePromote(participant.id)}
+                      >
+                        Promote
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
