@@ -1,6 +1,6 @@
-
 import { RoomData } from '@/components/rooms/RoomCard';
 import { mockRooms } from '@/data/mockData';
+import { Participant } from '@/components/rooms/ParticipantAvatar';
 
 const ROOMS_STORAGE_KEY = 'voicewave_rooms';
 
@@ -8,6 +8,7 @@ const ROOMS_STORAGE_KEY = 'voicewave_rooms';
 export interface ExtendedRoomData extends RoomData {
   description?: string;
   createdAt: string;
+  participants: Participant[];
 }
 
 // Initialize local storage with mock data if empty

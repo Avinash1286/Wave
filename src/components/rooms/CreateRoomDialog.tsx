@@ -55,6 +55,21 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
     }
   });
 
+  const [coverImage, setCoverImage] = React.useState<string | undefined>(undefined);
+  const [coverPreview, setCoverPreview] = React.useState<string | undefined>(undefined);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImage(reader.result as string);
+        setCoverPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = (values: FormValues) => {
     const currentUser = getCurrentUser();
     // Generate a new room object
@@ -69,6 +84,7 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
       createdAt: new Date().toISOString(),
       tags: values.tags ? values.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
       creatorId: currentUser?.id,
+      imageUrl: coverImage, // Add cover image to room object
       // Add participants array for demo/testing
       participants: [
         {
@@ -116,6 +132,8 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
 
     onRoomCreated(newRoom);
     form.reset();
+    setCoverImage(undefined);
+    setCoverPreview(undefined);
     onOpenChange(false);
     toast.success('Room created successfully!');
   };
@@ -177,6 +195,15 @@ const CreateRoomDialog: React.FC<CreateRoomDialogProps> = ({
                 </FormItem>
               )}
             />
+
+            {/* Cover image upload */}
+            <div>
+              <FormLabel>Cover Image (optional)</FormLabel>
+              <Input type="file" accept="image/*" onChange={handleImageChange} />
+              {coverPreview && (
+                <img src={coverPreview} alt="Cover Preview" className="mt-2 w-full max-h-40 object-cover rounded" />
+              )}
+            </div>
 
             <DialogFooter className="mt-6">
               <DialogClose asChild>

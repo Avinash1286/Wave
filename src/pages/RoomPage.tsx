@@ -358,7 +358,7 @@ const RoomPage: React.FC = () => {
         <div 
           className="relative min-h-[40vh] flex items-center justify-center overflow-hidden rounded-2xl mx-4 mb-8"
           style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('${getImageForTags(roomData.tags)}')`,
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('${roomData.imageUrl || getImageForTags(roomData.tags)}')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'fixed'
